@@ -104,7 +104,7 @@ function AuraViewInternal() {
     // Keep previous suggestions while loading new ones for a better UX
     
     try {
-      const timeOfDay = new Date().getHours() < 12 ? 'Morning' : new Date().getHours() < 18 ? 'Afternoon' : 'Evening';
+      const timeOfDay = new Date().getHours() < 12 ? 'Morning' : new Date().getHours() < 18 ? 'Evening' : 'Night';
       const imagePrompt = `${values.mood} ${weather} ${timeOfDay} in ${location}`.toLowerCase();
 
       const [activityRes, musicRes, imageRes] = await Promise.all([
@@ -182,10 +182,12 @@ function AuraViewInternal() {
                 <div className="space-y-2">
                   <FormLabel>Location</FormLabel>
                   {isEditingLocation ? (
-                    <form onSubmit={handleLocationSubmit} className="flex gap-2">
-                      <Input name="location" defaultValue={currentLocation} />
-                      <Button type="submit">Set</Button>
-                    </form>
+                    <div className="flex gap-2">
+                       <form onSubmit={handleLocationSubmit} className="flex gap-2">
+                        <Input name="location" defaultValue={currentLocation} />
+                        <Button type="submit">Set</Button>
+                      </form>
+                    </div>
                   ) : (
                     <div className="flex items-center justify-between p-2 rounded-md border border-input">
                       <div className="flex items-center gap-2">
@@ -242,7 +244,7 @@ function AuraViewInternal() {
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select a language" />
-                          </Trigger>
+                          </SelectTrigger>
                         </FormControl>
                         <SelectContent>
                           <SelectItem value="English">English</SelectItem>
@@ -336,9 +338,8 @@ function AuraViewInternal() {
         </div>
       </div>
     </div>
-  )
+  );
 }
-
 
 export function AuraViewClient() {
   return (
@@ -347,3 +348,5 @@ export function AuraViewClient() {
     </Suspense>
   )
 }
+
+    
