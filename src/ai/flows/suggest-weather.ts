@@ -13,7 +13,7 @@ import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 
 const SuggestWeatherInputSchema = z.object({
-  location: z.string().describe("The user's location (e.g., city, park)."),
+  location: z.string().describe("The user's location (e.g., city, country, or specific address)."),
 });
 export type SuggestWeatherInput = z.infer<typeof SuggestWeatherInputSchema>;
 
@@ -30,7 +30,7 @@ const suggestWeatherPrompt = ai.definePrompt({
   name: 'suggestWeatherPrompt',
   input: { schema: SuggestWeatherInputSchema },
   output: { schema: SuggestWeatherOutputSchema },
-  prompt: `Based on the location, predict the current weather. Choose from Sunny, Rainy, Cloudy, Windy, Drizzle, Snowy, Stormy.
+  prompt: `Based on the provided location, predict the current weather there. Be as accurate as possible. Choose one of the following weather conditions: Sunny, Rainy, Cloudy, Windy, Drizzle, Snowy, Stormy.
 
 Location: {{{location}}}
 

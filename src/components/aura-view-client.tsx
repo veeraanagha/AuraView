@@ -53,6 +53,7 @@ function AuraViewInternal() {
 
   const [suggestions, setSuggestions] = useState<Suggestions>({ activity: null, music: null, imageUrl: null })
   const [isLoading, setIsLoading] = useState(false)
+  const [hasGenerated, setHasGenerated] = useState(false)
   const [weather, setWeather] = useState('');
   const [isEditingLocation, setIsEditingLocation] = useState(false);
   const [currentLocation, setCurrentLocation] = useState(location || '');
@@ -98,6 +99,7 @@ function AuraViewInternal() {
   async function onSubmit(values: FormValues) {
     if (!location || !weather) return;
     setIsLoading(true)
+    setHasGenerated(true)
     setSuggestions({ activity: null, music: null, imageUrl: null })
     
     try {
@@ -139,7 +141,7 @@ function AuraViewInternal() {
         title: "Error",
         description: errorMessage,
       })
-      setSuggestions({ activity: null, music: null, imageUrl: `https://placehold.co/1200x800.png` })
+      setSuggestions({ activity: null, music: null, imageUrl: null })
     } finally {
       setIsLoading(false)
     }
@@ -263,79 +265,82 @@ function AuraViewInternal() {
           </CardContent>
         </Card>
 
-        <div className="lg:col-span-2 space-y-8">
-            <Card className="overflow-hidden shadow-xl">
-                 <AnimatePresence>
-                    <motion.div
-                    key={suggestions.imageUrl || 'placeholder'}
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.5, ease: "easeInOut" }}
-                    >
-                    {(isLoading && !suggestions.imageUrl) ? (
-                        <Skeleton className="w-full aspect-[3/2]" />
-                    ) : (
-                        <Image
-                            src={suggestions.imageUrl || `https://placehold.co/1200x800.png`}
-                            alt="Dynamic visual based on weather and mood"
-                            width={1200}
-                            height={800}
-                            className="w-full h-auto object-cover aspect-[3/2] transition-all duration-500 hover:scale-105"
-                            data-ai-hint="ambience"
-                            priority
-                        />
-                    )}
-                    </motion.div>
-                </AnimatePresence>
-            </Card>
-          
-          <AnimatePresence>
-            {isLoading && (!suggestions.activity || !suggestions.music) && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                className="space-y-8"
-              >
-                  <SuggestionCard.Skeleton />
-                  <SuggestionCard.Skeleton />
-              </motion.div>
-            )}
-          </AnimatePresence>
+        {hasGenerated && (
+          <div className="lg:col-span-2 space-y-8">
+              <Card className="overflow-hidden shadow-xl">
+                   <AnimatePresence>
+                      <motion.div
+                      key={suggestions.imageUrl || 'placeholder'}
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.5, ease: "easeInOut" }}
+                      >
+                      {(isLoading && !suggestions.imageUrl) ? (
+                          <Skeleton className="w-full aspect-[3/2]" />
+                      ) : (
+                          suggestions.imageUrl &&
+                          <Image
+                              src={suggestions.imageUrl}
+                              alt="Dynamic visual based on weather and mood"
+                              width={1200}
+                              height={800}
+                              className="w-full h-auto object-cover aspect-[3/2] transition-all duration-500 hover:scale-105"
+                              data-ai-hint="ambience"
+                              priority
+                          />
+                      )}
+                      </motion.div>
+                  </AnimatePresence>
+              </Card>
+            
+            <AnimatePresence>
+              {isLoading && (!suggestions.activity || !suggestions.music) && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  className="space-y-8"
+                >
+                    <SuggestionCard.Skeleton />
+                    <SuggestionCard.Skeleton />
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-          <div className="space-y-8">
-            <AnimatePresence>
-              {suggestions.activity && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0, transition: { delay: 0.2 } }}
-                  exit={{ opacity: 0 }}
-                >
-                  <SuggestionCard icon={Sparkles} title="Activity Suggestions">
-                    {suggestions.activity}
-                  </SuggestionCard>
-                </motion.div>
-              )}
-            </AnimatePresence>
-            <AnimatePresence>
-              {suggestions.music && suggestions.music.length > 0 && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0, transition: { delay: 0.4 } }}
-                  exit={{ opacity: 0 }}
-                >
-                  <SuggestionCard icon={Music2} title="Music Suggestions">
-                    <ul className="list-disc list-inside space-y-1 font-code">
-                      {suggestions.music.map((song, index) => (
-                        <li key={index}>{song}</li>
-                      ))}
-                    </ul>
-                  </SuggestionCard>
-                </motion.div>
-              )}
-            </AnimatePresence>
+            <div className="space-y-8">
+              <AnimatePresence>
+                {suggestions.activity && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0, transition: { delay: 0.2 } }}
+                    exit={{ opacity: 0 }}
+                  >
+                    <SuggestionCard icon={Sparkles} title="Activity Suggestions">
+                      {suggestions.activity}
+                    </SuggestionCard>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+              <AnimatePresence>
+                {suggestions.music && suggestions.music.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0, transition: { delay: 0.4 } }}
+                    exit={{ opacity: 0 }}
+                  >
+                    <SuggestionCard icon={Music2} title="Music Suggestions">
+                      <ul className="list-disc list-inside space-y-1 font-code">
+                        {suggestions.music.map((song, index) => (
+                          <li key={index}>{song}</li>
+                        ))}
+                      </ul>
+                    </SuggestionCard>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
