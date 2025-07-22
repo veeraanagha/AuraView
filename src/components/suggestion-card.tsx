@@ -1,4 +1,3 @@
-
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { LucideIcon } from 'lucide-react';
@@ -20,7 +19,7 @@ export function SuggestionCard({ icon: Icon, title, children, className }: Sugge
         <CardTitle className="text-xl font-headline">{title}</CardTitle>
       </CardHeader>
       <CardContent>
-        <p className="text-foreground/80 font-body leading-relaxed">{children}</p>
+        <div className="text-foreground/80 font-body leading-relaxed">{children}</div>
       </CardContent>
     </Card>
   );
@@ -33,6 +32,8 @@ const SkeletonComponent = () => (
         <Skeleton className="h-6 w-1/3" />
       </CardHeader>
       <CardContent className='space-y-2'>
+        <Skeleton className="h-4 w-full" />
+        <Skeleton className="h-4 w-4/5" />
         <Skeleton className="h-4 w-full" />
         <Skeleton className="h-4 w-3/4" />
       </CardContent>

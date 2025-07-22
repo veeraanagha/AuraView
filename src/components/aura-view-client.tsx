@@ -1,13 +1,13 @@
-
 "use client"
 
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import { useState } from "react"
+import { useState, useEffect, Suspense } from "react"
+import { useSearchParams, useRouter } from 'next/navigation'
 import Image from "next/image"
 import { motion, AnimatePresence } from "framer-motion"
-import { Loader2, Music2, Sparkles, Wand2 } from "lucide-react"
+import { Loader2, Music2, Sparkles, Wand2, MapPin, Edit } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -30,12 +30,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { SuggestionCard } from "./suggestion-card"
 import { getActivitySuggestion, getMusicSuggestion, getImageGeneration } from "@/app/actions"
 import { useToast } from "@/hooks/use-toast"
+import { Skeleton } from "./ui/skeleton"
 
 const formSchema = z.object({
-  location: z.string().min(2, "Location is too short.").max(50, "Location is too long."),
   mood: z.enum(["Chill", "Creative", "Romantic", "Adventurous"]),
-  weather: z.enum(["Sunny", "Rainy", "Cloudy", "Windy", "Drizzle"]),
-  timeOfDay: z.enum(["Morning", "Afternoon", "Evening", "Night"]),
   language: z.enum(["English", "Hindi", "Telugu", "Tamil", "Malayalam"]),
 })
 
@@ -47,38 +45,77 @@ interface Suggestions {
   imageUrl: string | null
 }
 
-export function AuraViewClient() {
+const weatherConditions = ["Sunny", "Rainy", "Cloudy", "Windy", "Drizzle", "Snowy", "Stormy"];
+
+function AuraViewInternal() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const location = searchParams.get('location');
+
   const [suggestions, setSuggestions] = useState<Suggestions>({ activity: null, music: null, imageUrl: null })
   const [isLoading, setIsLoading] = useState(false)
+  const [weather, setWeather] = useState('');
+  const [isEditingLocation, setIsEditingLocation] = useState(false);
+  const [currentLocation, setCurrentLocation] = useState(location || '');
   const { toast } = useToast()
+
+  useEffect(() => {
+    if (!location) {
+        router.push('/');
+        return;
+    }
+    // "detect" weather
+    const randomWeather = weatherConditions[Math.floor(Math.random() * weatherConditions.length)];
+    setWeather(randomWeather);
+    setCurrentLocation(location);
+  }, [location, router]);
+
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      location: "San Francisco",
       mood: "Creative",
-      weather: "Sunny",
-      timeOfDay: "Afternoon",
       language: "English",
     },
   })
+  
+  const { watch } = form;
+  const mood = watch("mood");
+  const language = watch("language");
 
-  async function onSubmit(values: FormValues) {
+  useEffect(() => {
+    if(location && weather && mood && language) {
+        // Debounce fetching suggestions
+        const handler = setTimeout(() => {
+            fetchSuggestions({mood, language});
+        }, 500);
+
+        return () => {
+            clearTimeout(handler);
+        };
+    }
+  }, [mood, language, weather, location]);
+
+
+  async function fetchSuggestions(values: FormValues) {
+    if (!location || !weather) return;
     setIsLoading(true)
-    setSuggestions({ activity: null, music: null, imageUrl: `https://placehold.co/1200x800.png` })
+    // Keep previous suggestions while loading new ones for a better UX
     
     try {
-      const imagePrompt = `${values.mood} ${values.weather}`.toLowerCase();
+      const timeOfDay = new Date().getHours() < 12 ? 'Morning' : new Date().getHours() < 18 ? 'Afternoon' : 'Evening';
+      const imagePrompt = `${values.mood} ${weather} ${timeOfDay} in ${location}`.toLowerCase();
+
       const [activityRes, musicRes, imageRes] = await Promise.all([
         getActivitySuggestion({
-          location: values.location,
+          location,
           mood: values.mood,
-          timeOfDay: values.timeOfDay,
-          weather: values.weather,
+          timeOfDay,
+          weather: weather,
         }),
         getMusicSuggestion({
           mood: values.mood,
-          weather: values.weather,
+          weather: weather,
           language: values.language,
         }),
         getImageGeneration({ prompt: imagePrompt })
@@ -104,42 +141,72 @@ export function AuraViewClient() {
         title: "Error",
         description: errorMessage,
       })
-       setSuggestions({ activity: null, music: null, imageUrl: `https://placehold.co/1200x800.png` })
+      setSuggestions({ activity: null, music: null, imageUrl: `https://placehold.co/1200x800.png` })
     } finally {
       setIsLoading(false)
     }
   }
 
+  const handleLocationSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsEditingLocation(false);
+    router.push(`/suggestions?location=${currentLocation}`);
+  }
+
+  if (!location) {
+      return (
+        <div className="flex h-[80vh] items-center justify-center">
+            <Loader2 className="h-16 w-16 animate-spin text-primary" />
+        </div>
+      )
+  }
+
   return (
     <div className="container mx-auto p-4 md:p-8">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-        <Card className="lg:col-span-1 sticky top-20">
+        <Card className="lg:col-span-1 sticky top-24">
           <CardHeader>
             <CardTitle className="font-headline flex items-center gap-2">
               <Wand2 className="h-6 w-6 text-primary" />
               Craft Your Aura
             </CardTitle>
             <CardDescription>
-              Tell us your location, mood, and more to generate a personalized experience.
+              Your personalized experience based on location, weather and mood.
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-6">
+            <div className="space-y-2">
+                <FormLabel>Location</FormLabel>
+                {isEditingLocation ? (
+                    <form onSubmit={handleLocationSubmit} className="flex gap-2">
+                        <Input value={currentLocation} onChange={(e) => setCurrentLocation(e.target.value)} />
+                        <Button type="submit">Set</Button>
+                    </form>
+                ) : (
+                    <div className="flex items-center justify-between p-2 rounded-md border border-input">
+                        <div className="flex items-center gap-2">
+                            <MapPin className="h-4 w-4 text-muted-foreground" />
+                            <span>{location}</span>
+                        </div>
+                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setIsEditingLocation(true)}>
+                            <Edit className="h-4 w-4" />
+                        </Button>
+                    </div>
+                )}
+            </div>
+
+            <div className="space-y-2">
+                <FormLabel>Detected Weather</FormLabel>
+                 <div className="flex items-center justify-between p-2 rounded-md border border-input">
+                    <div className="flex items-center gap-2">
+                        <Sparkles className="h-4 w-4 text-muted-foreground" />
+                        <span>{weather || "Detecting..."}</span>
+                    </div>
+                </div>
+            </div>
+
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <FormField
-                  control={form.control}
-                  name="location"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Location</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g., Paris, France" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <form className="space-y-6">
                   <FormField
                     control={form.control}
                     name="mood"
@@ -157,55 +224,6 @@ export function AuraViewClient() {
                             <SelectItem value="Creative">Creative</SelectItem>
                             <SelectItem value="Romantic">Romantic</SelectItem>
                             <SelectItem value="Adventurous">Adventurous</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="weather"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Weather</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select weather" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="Sunny">Sunny</SelectItem>
-                            <SelectItem value="Rainy">Rainy</SelectItem>
-                            <SelectItem value="Cloudy">Cloudy</SelectItem>
-                            <SelectItem value="Windy">Windy</SelectItem>
-                            <SelectItem value="Drizzle">Drizzle</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                   <FormField
-                    control={form.control}
-                    name="timeOfDay"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Time of Day</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select time of day" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="Morning">Morning</SelectItem>
-                            <SelectItem value="Afternoon">Afternoon</SelectItem>
-                            <SelectItem value="Evening">Evening</SelectItem>
-                            <SelectItem value="Night">Night</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -236,42 +254,39 @@ export function AuraViewClient() {
                       </FormItem>
                     )}
                   />
-                </div>
-
-                <Button type="submit" className="w-full !mt-8 bg-accent hover:bg-accent/90" disabled={isLoading}>
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Generating...
-                    </>
-                  ) : "Generate Experience"}
-                </Button>
               </form>
             </Form>
           </CardContent>
         </Card>
 
         <div className="lg:col-span-2 space-y-8">
-          <Card className="overflow-hidden shadow-xl">
-            <motion.div
-              key={suggestions.imageUrl}
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5, ease: "easeInOut" }}
-            >
-              <Image
-                src={suggestions.imageUrl || `https://placehold.co/1200x800.png`}
-                alt="Dynamic visual based on weather and mood"
-                width={1200}
-                height={800}
-                className="w-full h-auto object-cover aspect-[3/2] transition-transform duration-500 hover:scale-105"
-                priority
-              />
-            </motion.div>
-          </Card>
+            <Card className="overflow-hidden shadow-xl">
+                 <AnimatePresence>
+                    <motion.div
+                    key={suggestions.imageUrl || 'placeholder'}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.5, ease: "easeInOut" }}
+                    >
+                    {isLoading && !suggestions.imageUrl ? (
+                        <Skeleton className="w-full aspect-[3/2]" />
+                    ) : (
+                        <Image
+                            src={suggestions.imageUrl || `https://placehold.co/1200x800.png`}
+                            alt="Dynamic visual based on weather and mood"
+                            width={1200}
+                            height={800}
+                            className="w-full h-auto object-cover aspect-[3/2] transition-all duration-500 hover:scale-105"
+                            data-ai-hint="ambience"
+                            priority
+                        />
+                    )}
+                    </motion.div>
+                </AnimatePresence>
+            </Card>
           
           <AnimatePresence>
-            {isLoading && (
+            {isLoading && (!suggestions.activity || !suggestions.music) && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -292,7 +307,7 @@ export function AuraViewClient() {
                   animate={{ opacity: 1, y: 0, transition: { delay: 0.2 } }}
                   exit={{ opacity: 0 }}
                 >
-                  <SuggestionCard icon={Sparkles} title="Activity Suggestion">
+                  <SuggestionCard icon={Sparkles} title="Activity Suggestions">
                     {suggestions.activity}
                   </SuggestionCard>
                 </motion.div>
@@ -305,7 +320,7 @@ export function AuraViewClient() {
                   animate={{ opacity: 1, y: 0, transition: { delay: 0.4 } }}
                   exit={{ opacity: 0 }}
                 >
-                  <SuggestionCard icon={Music2} title="Music Suggestion">
+                  <SuggestionCard icon={Music2} title="Music Suggestions">
                     <ul className="list-disc list-inside space-y-1 font-code">
                       {suggestions.music.map((song, index) => (
                         <li key={index}>{song}</li>
@@ -319,5 +334,14 @@ export function AuraViewClient() {
         </div>
       </div>
     </div>
+  )
+}
+
+
+export function AuraViewClient() {
+  return (
+    <Suspense fallback={<div className="flex h-[80vh] items-center justify-center"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>}>
+        <AuraViewInternal />
+    </Suspense>
   )
 }

@@ -23,7 +23,7 @@ const SuggestActivityInputSchema = z.object({
 export type SuggestActivityInput = z.infer<typeof SuggestActivityInputSchema>;
 
 const SuggestActivityOutputSchema = z.object({
-  suggestion: z.string().describe('A few suggested activities based on the weather, time of day, mood and location.'),
+  suggestion: z.string().describe('A few simple and decent suggested activities based on the weather, time of day, mood and location.'),
 });
 export type SuggestActivityOutput = z.infer<typeof SuggestActivityOutputSchema>;
 
@@ -31,14 +31,14 @@ const suggestActivityPrompt = ai.definePrompt({
   name: 'suggestActivityPrompt',
   input: {schema: SuggestActivityInputSchema},
   output: {schema: SuggestActivityOutputSchema},
-  prompt: `Based on the current weather, time of day, your mood and location, suggest a few simple activities.
+  prompt: `Based on the current weather, time of day, your mood and location, suggest a few simple and decent activities. Keep the suggestions concise and easy to do.
 
 Weather: {{{weather}}}
 Time of Day: {{{timeOfDay}}}
 Mood: {{{mood}}}
 Location: {{{location}}}
 
-Suggestion: `,
+Suggestions: `,
 });
 
 const suggestActivityFlow = ai.defineFlow(
