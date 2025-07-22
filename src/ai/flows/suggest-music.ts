@@ -21,7 +21,7 @@ const SuggestMusicInputSchema = z.object({
 export type SuggestMusicInput = z.infer<typeof SuggestMusicInputSchema>;
 
 const SuggestMusicOutputSchema = z.object({
-  playlistSuggestion: z.string().describe('A suggestion for a music playlist that matches the mood, weather, and language.'),
+  playlistSuggestion: z.array(z.string()).describe('A list of song suggestions that matches the mood, weather, and language.'),
 });
 export type SuggestMusicOutput = z.infer<typeof SuggestMusicOutputSchema>;
 
@@ -33,13 +33,13 @@ const prompt = ai.definePrompt({
   name: 'suggestMusicPrompt',
   input: {schema: SuggestMusicInputSchema},
   output: {schema: SuggestMusicOutputSchema},
-  prompt: `You are a music recommendation expert. Given the user's mood, the current weather, and their preferred language, suggest a music playlist that fits these criteria.\
-\
-Mood: {{{mood}}}\
-Weather: {{{weather}}}\
-Language: {{{language}}}\
-\
-Suggest a relevant music playlist:`,
+  prompt: `You are a music recommendation expert. Given the user's mood, the current weather, and their preferred language, suggest a music playlist with a list of 5 songs that fits these criteria.
+
+Mood: {{{mood}}}
+Weather: {{{weather}}}
+Language: {{{language}}}
+
+Suggest 5 relevant songs:`,
 });
 
 const suggestMusicFlow = ai.defineFlow(

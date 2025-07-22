@@ -28,7 +28,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { SuggestionCard } from "./suggestion-card"
-import { getActivitySuggestion, getMusicSuggestion } from "@/app/actions"
+import { getActivitySuggestion, getMusicSuggestion, getImageGeneration } from "@/app/actions"
 import { useToast } from "@/hooks/use-toast"
 
 const formSchema = z.object({
@@ -43,13 +43,13 @@ type FormValues = z.infer<typeof formSchema>
 
 interface Suggestions {
   activity: string | null
-  music: string | null
+  music: string[] | null
+  imageUrl: string | null
 }
 
 export function AuraViewClient() {
-  const [suggestions, setSuggestions] = useState<Suggestions>({ activity: null, music: null })
+  const [suggestions, setSuggestions] = useState<Suggestions>({ activity: null, music: null, imageUrl: null })
   const [isLoading, setIsLoading] = useState(false)
-  const [visualHint, setVisualHint] = useState("abstract weather")
   const { toast } = useToast()
 
   const form = useForm<FormValues>({
@@ -65,11 +65,11 @@ export function AuraViewClient() {
 
   async function onSubmit(values: FormValues) {
     setIsLoading(true)
-    setSuggestions({ activity: null, music: null })
-    setVisualHint(`${values.mood} ${values.weather}`.toLowerCase())
-
+    setSuggestions({ activity: null, music: null, imageUrl: `https://placehold.co/1200x800.png` })
+    
     try {
-      const [activityRes, musicRes] = await Promise.all([
+      const imagePrompt = `${values.mood} ${values.weather}`.toLowerCase();
+      const [activityRes, musicRes, imageRes] = await Promise.all([
         getActivitySuggestion({
           location: values.location,
           mood: values.mood,
@@ -81,15 +81,21 @@ export function AuraViewClient() {
           weather: values.weather,
           language: values.language,
         }),
+        getImageGeneration({ prompt: imagePrompt })
       ])
 
-      if (activityRes.success && musicRes.success) {
+      if (activityRes.success && musicRes.success && imageRes.success) {
         setSuggestions({
           activity: activityRes.data.suggestion,
           music: musicRes.data.playlistSuggestion,
+          imageUrl: imageRes.data.imageUrl
         })
       } else {
-        throw new Error(activityRes.error || musicRes.error || "An unknown error occurred.")
+        let errorMsg = "An unknown error occurred.";
+        if (!activityRes.success) errorMsg = activityRes.error || "Activity suggestion failed.";
+        else if (!musicRes.success) errorMsg = musicRes.error || "Music suggestion failed.";
+        else if (!imageRes.success) errorMsg = imageRes.error || "Image generation failed.";
+        throw new Error(errorMsg)
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred."
@@ -98,6 +104,7 @@ export function AuraViewClient() {
         title: "Error",
         description: errorMessage,
       })
+       setSuggestions({ activity: null, music: null, imageUrl: `https://placehold.co/1200x800.png` })
     } finally {
       setIsLoading(false)
     }
@@ -247,14 +254,13 @@ export function AuraViewClient() {
         <div className="lg:col-span-2 space-y-8">
           <Card className="overflow-hidden shadow-xl">
             <motion.div
-              key={visualHint}
+              key={suggestions.imageUrl}
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5, ease: "easeInOut" }}
             >
               <Image
-                src={`https://placehold.co/1200x800.png`}
-                data-ai-hint={visualHint}
+                src={suggestions.imageUrl || `https://placehold.co/1200x800.png`}
                 alt="Dynamic visual based on weather and mood"
                 width={1200}
                 height={800}
@@ -293,14 +299,18 @@ export function AuraViewClient() {
               )}
             </AnimatePresence>
             <AnimatePresence>
-              {suggestions.music && (
+              {suggestions.music && suggestions.music.length > 0 && (
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0, transition: { delay: 0.4 } }}
                   exit={{ opacity: 0 }}
                 >
                   <SuggestionCard icon={Music2} title="Music Suggestion">
-                    <p className="font-code">{suggestions.music}</p>
+                    <ul className="list-disc list-inside space-y-1 font-code">
+                      {suggestions.music.map((song, index) => (
+                        <li key={index}>{song}</li>
+                      ))}
+                    </ul>
                   </SuggestionCard>
                 </motion.div>
               )}

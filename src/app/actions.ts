@@ -3,6 +3,7 @@
 
 import { suggestActivity, type SuggestActivityInput } from '@/ai/flows/suggest-activity'
 import { suggestMusic, type SuggestMusicInput } from '@/ai/flows/suggest-music'
+import { generateImage, type GenerateImageInput } from '@/ai/flows/generate-image'
 
 export async function getActivitySuggestion(input: SuggestActivityInput) {
   try {
@@ -22,4 +23,14 @@ export async function getMusicSuggestion(input: SuggestMusicInput) {
     console.error('Error getting music suggestion:', error)
     return { success: false, error: 'Failed to get music suggestion. Please try again.' }
   }
+}
+
+export async function getImageGeneration(input: GenerateImageInput) {
+    try {
+        const data = await generateImage(input)
+        return { success: true, data }
+    } catch (error) {
+        console.error('Error getting image generation:', error)
+        return { success: false, error: 'Failed to get image generation. Please try again.' }
+    }
 }

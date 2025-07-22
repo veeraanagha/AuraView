@@ -9,7 +9,6 @@
  *
  * @interface SuggestActivityInput - Input for the suggestActivity function.
  * @interface SuggestActivityOutput - Output of the suggestActivity function.
- * @function suggestActivity - Main function to get activity suggestions.
  */
 
 import {ai} from '@/ai/genkit';
@@ -24,7 +23,7 @@ const SuggestActivityInputSchema = z.object({
 export type SuggestActivityInput = z.infer<typeof SuggestActivityInputSchema>;
 
 const SuggestActivityOutputSchema = z.object({
-  suggestion: z.string().describe('A suggested activity based on the weather, time of day, mood and location.'),
+  suggestion: z.string().describe('A few suggested activities based on the weather, time of day, mood and location.'),
 });
 export type SuggestActivityOutput = z.infer<typeof SuggestActivityOutputSchema>;
 
@@ -32,7 +31,7 @@ const suggestActivityPrompt = ai.definePrompt({
   name: 'suggestActivityPrompt',
   input: {schema: SuggestActivityInputSchema},
   output: {schema: SuggestActivityOutputSchema},
-  prompt: `Based on the current weather, time of day, your mood and location, suggest an activity.
+  prompt: `Based on the current weather, time of day, your mood and location, suggest a few simple activities.
 
 Weather: {{{weather}}}
 Time of Day: {{{timeOfDay}}}
