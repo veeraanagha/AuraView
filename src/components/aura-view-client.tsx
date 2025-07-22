@@ -94,29 +94,11 @@ function AuraViewInternal() {
       language: "English",
     },
   })
-  
-  const { watch } = form;
-  const mood = watch("mood");
-  const language = watch("language");
 
-  useEffect(() => {
-    if(location && weather && mood && language) {
-        // Debounce fetching suggestions
-        const handler = setTimeout(() => {
-            fetchSuggestions({mood, language});
-        }, 500);
-
-        return () => {
-            clearTimeout(handler);
-        };
-    }
-  }, [mood, language, weather, location]);
-
-
-  async function fetchSuggestions(values: FormValues) {
+  async function onSubmit(values: FormValues) {
     if (!location || !weather) return;
     setIsLoading(true)
-    // Keep previous suggestions while loading new ones for a better UX
+    setSuggestions({ activity: null, music: null, imageUrl: null })
     
     try {
       const timeOfDay = new Date().getHours() < 12 ? 'Morning' : new Date().getHours() < 18 ? 'Evening' : 'Night';
@@ -193,16 +175,14 @@ function AuraViewInternal() {
           </CardHeader>
           <CardContent>
             <Form {...form}>
-              <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 <div className="space-y-2">
                   <FormLabel>Location</FormLabel>
                   {isEditingLocation ? (
-                    <div className="flex gap-2">
-                      <form onSubmit={handleLocationSubmit} className="flex gap-2">
-                        <Input name="location" defaultValue={currentLocation} />
-                        <Button type="submit">Set</Button>
-                      </form>
-                    </div>
+                    <form onSubmit={handleLocationSubmit} className="flex gap-2">
+                      <Input name="location" defaultValue={currentLocation} />
+                      <Button type="submit">Set</Button>
+                    </form>
                   ) : (
                     <div className="flex items-center justify-between p-2 rounded-md border border-input">
                       <div className="flex items-center gap-2">
@@ -273,6 +253,11 @@ function AuraViewInternal() {
                     </FormItem>
                   )}
                 />
+
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Generate Aura
+                </Button>
               </form>
             </Form>
           </CardContent>
@@ -287,7 +272,7 @@ function AuraViewInternal() {
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.5, ease: "easeInOut" }}
                     >
-                    {isLoading && !suggestions.imageUrl ? (
+                    {(isLoading && !suggestions.imageUrl) ? (
                         <Skeleton className="w-full aspect-[3/2]" />
                     ) : (
                         <Image
