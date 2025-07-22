@@ -29,7 +29,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { SuggestionCard } from "./suggestion-card"
-import { getActivitySuggestion, getMusicSuggestion, getImageGeneration } from "@/app/actions"
+import { getActivitySuggestion, getMusicSuggestion, getImageGeneration, getWeatherSuggestion } from "@/app/actions"
 import { useToast } from "@/hooks/use-toast"
 import { Skeleton } from "./ui/skeleton"
 
@@ -46,8 +46,6 @@ interface Suggestions {
   imageUrl: string | null
 }
 
-const weatherConditions = ["Sunny", "Rainy", "Cloudy", "Windy", "Drizzle", "Snowy", "Stormy"];
-
 function AuraViewInternal() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -62,14 +60,31 @@ function AuraViewInternal() {
 
   useEffect(() => {
     if (!location) {
-        router.push('/');
-        return;
+      router.push('/');
+      return;
     }
-    // "detect" weather
-    const randomWeather = weatherConditions[Math.floor(Math.random() * weatherConditions.length)];
-    setWeather(randomWeather);
+    
+    async function fetchWeather() {
+      try {
+        const weatherRes = await getWeatherSuggestion({ location: location! });
+        if (weatherRes.success) {
+          setWeather(weatherRes.data.weather);
+        } else {
+          throw new Error(weatherRes.error || "Could not fetch weather");
+        }
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred."
+        toast({
+            variant: "destructive",
+            title: "Error",
+            description: `Could not detect weather: ${errorMessage}`
+        });
+        setWeather('Sunny'); // Fallback
+      }
+    }
+    fetchWeather();
     setCurrentLocation(location);
-  }, [location, router]);
+  }, [location, router, toast]);
 
 
   const form = useForm<FormValues>({
@@ -183,7 +198,7 @@ function AuraViewInternal() {
                   <FormLabel>Location</FormLabel>
                   {isEditingLocation ? (
                     <div className="flex gap-2">
-                       <form onSubmit={handleLocationSubmit} className="flex gap-2">
+                      <form onSubmit={handleLocationSubmit} className="flex gap-2">
                         <Input name="location" defaultValue={currentLocation} />
                         <Button type="submit">Set</Button>
                       </form>
@@ -348,5 +363,3 @@ export function AuraViewClient() {
     </Suspense>
   )
 }
-
-    

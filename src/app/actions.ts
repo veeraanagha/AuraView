@@ -4,6 +4,7 @@
 import { suggestActivity, type SuggestActivityInput } from '@/ai/flows/suggest-activity'
 import { suggestMusic, type SuggestMusicInput } from '@/ai/flows/suggest-music'
 import { generateImage, type GenerateImageInput } from '@/ai/flows/generate-image'
+import { suggestWeather, type SuggestWeatherInput } from '@/ai/flows/suggest-weather'
 
 export async function getActivitySuggestion(input: SuggestActivityInput) {
   try {
@@ -33,4 +34,14 @@ export async function getImageGeneration(input: GenerateImageInput) {
         console.error('Error getting image generation:', error)
         return { success: false, error: 'Failed to get image generation. Please try again.' }
     }
+}
+
+export async function getWeatherSuggestion(input: SuggestWeatherInput) {
+  try {
+    const data = await suggestWeather(input);
+    return { success: true, data };
+  } catch (error) {
+    console.error('Error getting weather suggestion:', error);
+    return { success: false, error: 'Failed to get weather suggestion. Please try again.' };
+  }
 }
