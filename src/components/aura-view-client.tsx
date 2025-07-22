@@ -1,3 +1,4 @@
+
 "use client"
 
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -149,8 +150,9 @@ function AuraViewInternal() {
 
   const handleLocationSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const newLocation = (e.currentTarget.elements.namedItem('location') as HTMLInputElement).value;
     setIsEditingLocation(false);
-    router.push(`/suggestions?location=${currentLocation}`);
+    router.push(`/suggestions?location=${newLocation}`);
   }
 
   if (!location) {
@@ -174,86 +176,86 @@ function AuraViewInternal() {
               Your personalized experience based on location, weather and mood.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-2">
-                <FormLabel>Location</FormLabel>
-                {isEditingLocation ? (
-                    <form onSubmit={handleLocationSubmit} className="flex gap-2">
-                        <Input value={currentLocation} onChange={(e) => setCurrentLocation(e.target.value)} />
-                        <Button type="submit">Set</Button>
-                    </form>
-                ) : (
-                    <div className="flex items-center justify-between p-2 rounded-md border border-input">
-                        <div className="flex items-center gap-2">
-                            <MapPin className="h-4 w-4 text-muted-foreground" />
-                            <span>{location}</span>
-                        </div>
-                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setIsEditingLocation(true)}>
-                            <Edit className="h-4 w-4" />
-                        </Button>
-                    </div>
-                )}
-            </div>
-
-            <div className="space-y-2">
-                <FormLabel>Detected Weather</FormLabel>
-                 <div className="flex items-center justify-between p-2 rounded-md border border-input">
-                    <div className="flex items-center gap-2">
-                        <Sparkles className="h-4 w-4 text-muted-foreground" />
-                        <span>{weather || "Detecting..."}</span>
-                    </div>
-                </div>
-            </div>
-
+          <CardContent>
             <Form {...form}>
-              <form className="space-y-6">
-                  <FormField
-                    control={form.control}
-                    name="mood"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Mood</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select a mood" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="Chill">Chill</SelectItem>
-                            <SelectItem value="Creative">Creative</SelectItem>
-                            <SelectItem value="Romantic">Romantic</SelectItem>
-                            <SelectItem value="Adventurous">Adventurous</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="language"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Music Language</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select a language" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="English">English</SelectItem>
-                            <SelectItem value="Hindi">Hindi</SelectItem>
-                            <SelectItem value="Telugu">Telugu</SelectItem>
-                            <SelectItem value="Tamil">Tamil</SelectItem>
-                            <SelectItem value="Malayalam">Malayalam</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+              <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
+                <div className="space-y-2">
+                  <FormLabel>Location</FormLabel>
+                  {isEditingLocation ? (
+                    <form onSubmit={handleLocationSubmit} className="flex gap-2">
+                      <Input name="location" defaultValue={currentLocation} />
+                      <Button type="submit">Set</Button>
+                    </form>
+                  ) : (
+                    <div className="flex items-center justify-between p-2 rounded-md border border-input">
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4 text-muted-foreground" />
+                        <span>{location}</span>
+                      </div>
+                      <Button variant="ghost" size="icon" className="h-6 w-6" type="button" onClick={() => setIsEditingLocation(true)}>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <FormLabel>Detected Weather</FormLabel>
+                  <div className="flex items-center justify-between p-2 rounded-md border border-input">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="h-4 w-4 text-muted-foreground" />
+                      <span>{weather || "Detecting..."}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <FormField
+                  control={form.control}
+                  name="mood"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Mood</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a mood" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="Chill">Chill</SelectItem>
+                          <SelectItem value="Creative">Creative</SelectItem>
+                          <SelectItem value="Romantic">Romantic</SelectItem>
+                          <SelectItem value="Adventurous">Adventurous</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="language"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Music Language</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a language" />
+                          </Trigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="English">English</SelectItem>
+                          <SelectItem value="Hindi">Hindi</SelectItem>
+                          <SelectItem value="Telugu">Telugu</SelectItem>
+                          <SelectItem value="Tamil">Tamil</SelectItem>
+                          <SelectItem value="Malayalam">Malayalam</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </form>
             </Form>
           </CardContent>
