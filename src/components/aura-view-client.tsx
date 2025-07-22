@@ -104,7 +104,7 @@ function AuraViewInternal() {
     
     try {
       const timeOfDay = new Date().getHours() < 12 ? 'Morning' : new Date().getHours() < 18 ? 'Evening' : 'Night';
-      const imagePrompt = `${values.mood} ${weather} ${timeOfDay} in ${location}`.toLowerCase();
+      const imagePrompt = `A photorealistic image of: ${values.mood} ${weather} ${timeOfDay} in ${location}`.toLowerCase();
 
       const [activityRes, musicRes, imageRes] = await Promise.all([
         getActivitySuggestion({
@@ -162,110 +162,113 @@ function AuraViewInternal() {
       )
   }
 
+  const formCard = (
+    <Card className={hasGenerated ? "lg:col-span-1 sticky top-24" : "w-full max-w-md"}>
+      <CardHeader>
+        <CardTitle className="font-headline flex items-center gap-2">
+          <Wand2 className="h-6 w-6 text-primary" />
+          Craft Your Aura
+        </CardTitle>
+        <CardDescription>
+          Your personalized experience based on location, weather and mood.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <div className="space-y-2">
+              <FormLabel>Location</FormLabel>
+              {isEditingLocation ? (
+                <form onSubmit={handleLocationSubmit} className="flex gap-2">
+                  <Input name="location" defaultValue={currentLocation} />
+                  <Button type="submit">Set</Button>
+                </form>
+              ) : (
+                <div className="flex items-center justify-between p-2 rounded-md border border-input">
+                  <div className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4 text-muted-foreground" />
+                    <span>{location}</span>
+                  </div>
+                  <Button variant="ghost" size="icon" className="h-6 w-6" type="button" onClick={() => setIsEditingLocation(true)}>
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <FormLabel>Detected Weather</FormLabel>
+              <div className="flex items-center justify-between p-2 rounded-md border border-input">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-muted-foreground" />
+                  <span>{weather || "Detecting..."}</span>
+                </div>
+              </div>
+            </div>
+
+            <FormField
+              control={form.control}
+              name="mood"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Mood</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a mood" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="Chill">Chill</SelectItem>
+                      <SelectItem value="Creative">Creative</SelectItem>
+                      <SelectItem value="Romantic">Romantic</SelectItem>
+                      <SelectItem value="Adventurous">Adventurous</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="language"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Music Language</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a language" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="English">English</SelectItem>
+                      <SelectItem value="Hindi">Hindi</SelectItem>
+                      <SelectItem value="Telugu">Telugu</SelectItem>
+                      <SelectItem value="Tamil">Tamil</SelectItem>
+                      <SelectItem value="Malayalam">Malayalam</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Generate Aura
+            </Button>
+          </form>
+        </Form>
+      </CardContent>
+    </Card>
+  );
+
   return (
     <div className="container mx-auto p-4 md:p-8">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-        <Card className="lg:col-span-1 sticky top-24">
-          <CardHeader>
-            <CardTitle className="font-headline flex items-center gap-2">
-              <Wand2 className="h-6 w-6 text-primary" />
-              Craft Your Aura
-            </CardTitle>
-            <CardDescription>
-              Your personalized experience based on location, weather and mood.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <div className="space-y-2">
-                  <FormLabel>Location</FormLabel>
-                  {isEditingLocation ? (
-                    <form onSubmit={handleLocationSubmit} className="flex gap-2">
-                      <Input name="location" defaultValue={currentLocation} />
-                      <Button type="submit">Set</Button>
-                    </form>
-                  ) : (
-                    <div className="flex items-center justify-between p-2 rounded-md border border-input">
-                      <div className="flex items-center gap-2">
-                        <MapPin className="h-4 w-4 text-muted-foreground" />
-                        <span>{location}</span>
-                      </div>
-                      <Button variant="ghost" size="icon" className="h-6 w-6" type="button" onClick={() => setIsEditingLocation(true)}>
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <FormLabel>Detected Weather</FormLabel>
-                  <div className="flex items-center justify-between p-2 rounded-md border border-input">
-                    <div className="flex items-center gap-2">
-                      <Sparkles className="h-4 w-4 text-muted-foreground" />
-                      <span>{weather || "Detecting..."}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <FormField
-                  control={form.control}
-                  name="mood"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Mood</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a mood" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="Chill">Chill</SelectItem>
-                          <SelectItem value="Creative">Creative</SelectItem>
-                          <SelectItem value="Romantic">Romantic</SelectItem>
-                          <SelectItem value="Adventurous">Adventurous</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="language"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Music Language</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a language" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="English">English</SelectItem>
-                          <SelectItem value="Hindi">Hindi</SelectItem>
-                          <SelectItem value="Telugu">Telugu</SelectItem>
-                          <SelectItem value="Tamil">Tamil</SelectItem>
-                          <SelectItem value="Malayalam">Malayalam</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Generate Aura
-                </Button>
-              </form>
-            </Form>
-          </CardContent>
-        </Card>
-
-        {hasGenerated && (
+      {hasGenerated ? (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+          {formCard}
           <div className="lg:col-span-2 space-y-8">
               <Card className="overflow-hidden shadow-xl">
                    <AnimatePresence>
@@ -340,8 +343,12 @@ function AuraViewInternal() {
               </AnimatePresence>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      ) : (
+        <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
+            {formCard}
+        </div>
+      )}
     </div>
   );
 }
